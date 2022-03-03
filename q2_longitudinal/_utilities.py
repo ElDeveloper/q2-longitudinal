@@ -766,6 +766,38 @@ def _vectorized_distance_to_baseline(
             data=output.iloc[:, 2].values, name='Distance')
 
 
+def _vectorized_differences(
+        distance_matrix: pd.DataFrame, metadata: pd.DataFrame,
+        state_column: str, individual_id_column: str, metric: str,
+        baseline=None) -> pd.Series:
+
+    output = pd.Series()
+
+    if baseline is None:
+        metadata.sort_values(by=[individual_id_column, state_column],
+                             ascending=True, inplace=True)
+        index_name = _generate_column_name(metadata)
+        metadata[index_name] = np.arange(len(metadata))
+
+        def difference(row):
+            next_index = row[index_name] + 1
+            if next_index >= len(metadata):
+                return np.nan
+            return metadata.iloc[next_index, metric] - row[metric]
+
+        output = metadata.apply(difference, axis=0).to_frame()
+        output.columns = ['Difference']
+
+        output['subject_1'] = metadata.loc[
+            output.index, individual_id_column].values
+        output['subject_2'] = metadata.loc[
+            metadata.index[1:], individual_id_column].values
+        output = output[output['subject_1'] == output['subject_2']]['Distance']
+        output.index.name = '#SampleID'
+
+    return output
+
+
 def _first_distances_and_distance_to_baseline(metadata, state_column,
                                               individual_id_column,
                                               distance_matrix,

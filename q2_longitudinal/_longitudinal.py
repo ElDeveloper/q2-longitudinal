@@ -17,6 +17,8 @@ import q2templates
 import warnings
 import biom
 import statsmodels.api as sm
+# from scipy.spatial.distance import pdist
+# from scipy.spatial.distance import squareform
 from statsmodels.formula.api import ols
 
 from ._utilities import (_get_group_pairs, _extract_distance_distribution,
@@ -592,9 +594,16 @@ def first_differences(metadata: qiime2.Metadata, state_column: str,
     _validate_input_columns(
         metadata, individual_id_column, None, state_column, metric)
 
+    # to get a distance matrix we need a 2-dimensional array, hence why we take
+    # the `[metric]` instead of `metric`.
+    # distance_matrix = skbio.DistanceMatrix(
+    #         data=squareform(pdist(metadata[[metric]].values,
+    #                               metric='cityblock')),
+    #         ids=metadata.index)
+
     return _first_differences(
         metadata, state_column, individual_id_column, metric,
-        replicate_handling, baseline=baseline, distance_matrix=None)
+        replicate_handling, baseline=baseline)
 
 
 def first_distances(distance_matrix: skbio.DistanceMatrix,
